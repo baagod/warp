@@ -22,8 +22,8 @@ var (
 	days = [13]int{0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
 )
 
-// Add 添加 年[, 月[, 日]]。若不传 [天数] 则月份不会溢出。
-func (t Time) Add(y int, md ...int) Time {
+// AddYear 添加 年[, 月[, 日]]。若不传 [天数] 则月份不会溢出。
+func (t Time) AddYear(y int, md ...int) Time {
 	md = append(md, []int{0, 0}...)
 	m, d := md[0], md[1]
 
@@ -41,7 +41,7 @@ func (t Time) Add(y int, md ...int) Time {
 }
 
 func (t Time) AddMonth(m int, d ...int) Time {
-	return t.Add(0, m, append(d, 0)[0])
+	return t.AddYear(0, m, append(d, 0)[0])
 }
 
 func (t Time) AddWeek(n int) Time {
@@ -49,11 +49,11 @@ func (t Time) AddWeek(n int) Time {
 }
 
 func (t Time) AddDay(d int) Time {
-	return t.Add(0, 0, d)
+	return t.AddYear(0, 0, d)
 }
 
-// AddDuration 返回 t + d 的时间
-func (t Time) AddDuration(d time.Duration) Time {
+// Add 返回 t + d 的时间
+func (t Time) Add(d time.Duration) Time {
 	return Time{time: t.time.Add(d)}
 }
 
@@ -83,7 +83,7 @@ func (t Time) Go(y int, a ...int) Time {
 		}
 	}
 
-	return t.Add(y, m, d)
+	return t.AddYear(y, m, d)
 }
 
 func (t Time) GoMonth(m int, d ...int) Time {
