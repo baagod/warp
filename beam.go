@@ -23,9 +23,19 @@ var (
 )
 
 // AddYear 添加 年[, 月[, 日]]。若不传 [天数] 则月份不会溢出。
-func (t Time) AddYear(y int, md ...int) Time {
-	md = append(md, []int{0, 0}...)
-	m, d := md[0], md[1]
+func (t Time) AddYear(ymd ...int) Time {
+	y, m, d := 1, 0, 0
+	if ymd != nil {
+		y = ymd[0]
+	}
+
+	if len(ymd) > 1 {
+		m = ymd[1]
+	}
+
+	if len(ymd) > 2 {
+		d = ymd[2]
+	}
 
 	if d == 0 { // 不传天数
 		month := t.Month()
@@ -40,16 +50,19 @@ func (t Time) AddYear(y int, md ...int) Time {
 	return Time{time: t.time.AddDate(y, m, d)}
 }
 
-func (t Time) AddMonth(m int, d ...int) Time {
-	return t.AddYear(0, m, append(d, 0)[0])
+func (t Time) AddMonth(md ...int) Time {
+	if md == nil {
+		md = append(md, 1)
+	}
+	return t.AddYear(0, md[0], append(md, 0)[1])
+}
+
+func (t Time) AddDay(d ...int) Time {
+	return t.AddYear(0, 0, append(d, 1)[0])
 }
 
 func (t Time) AddWeek(n int) Time {
 	return t.AddDay(n * 7)
-}
-
-func (t Time) AddDay(d int) Time {
-	return t.AddYear(0, 0, d)
 }
 
 // Add 返回 t + d 的时间

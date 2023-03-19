@@ -15,8 +15,9 @@ func TestFunc(_ *testing.T) {
 	var m MM
 	// m.Time = beam.Now()
 
-	data := `{"time":"2023-03-19 23:17:18.944"}`
+	data := `{"time":"2024-02-29 23:17:18.944"}`
 
 	_ = json.Unmarshal([]byte(data), &m)
-	fmt.Println(m.Time)
+	// fmt.Println(m.Time)
+	fmt.Println(m.Time.AddMonth(2, 1))
 }
