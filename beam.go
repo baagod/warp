@@ -70,8 +70,7 @@ func (t Time) Add(d time.Duration) Time {
 	return Time{time: t.time.Add(d)}
 }
 
-// Go 去 年[, 月[, 日]]。若不传 [天数] 则月份不会溢出。
-// y 在当前年的基础上偏移 ±y 年，a[0], a[1] 指定到确切的月、日。
+// Go 去 t.Year()+y 年 a[0] 月 a[1] 日。月、日均不溢出。
 // 如果 [月、日] 为负数，则从最后的月、日开始偏移。
 func (t Time) Go(y int, md ...int) Time {
 	md = append(md, []int{0, 0}...)
@@ -177,6 +176,11 @@ func (t Time) InSeconds(u Time) int {
 	return int(t.Sub(u).Abs().Seconds())
 }
 
+// Sub 返回 t - u 的时间差
+func (t Time) Sub(u Time) time.Duration {
+	return t.time.Sub(u.time)
+}
+
 // Year 返回 t 的年份
 func (t Time) Year() int {
 	return t.time.Year()
@@ -260,9 +264,19 @@ func (t Time) UnixNano() int64 {
 	return t.time.UnixNano()
 }
 
-// Sub 返回 t - u 的时间差
-func (t Time) Sub(u Time) time.Duration {
-	return t.time.Sub(u.time)
+// Before 返回 t 是否在 u 之前 (t < u)
+func (t Time) Before(u Time) bool {
+	return t.time.Before(u.time)
+}
+
+// After 返回 t 是否在 u 之后 (t > u)
+func (t Time) After(u Time) bool {
+	return t.time.After(u.time)
+}
+
+// Equal 返回 t == u
+func (t Time) Equal(u Time) bool {
+	return t.time.Equal(u.time)
 }
 
 // Compare 比较 t 和 u。

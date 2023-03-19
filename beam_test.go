@@ -1,23 +1,15 @@
 package beam_test
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/baa-god/beam"
 	"testing"
 )
 
 func TestFunc(_ *testing.T) {
-	type MM struct {
-		Time beam.Time `json:"time"`
-	}
+	now := beam.Now()
 
-	var m MM
-	// m.Time = beam.Now()
-
-	data := `{"time":"2024-02-29 23:17:18.944"}`
-
-	_ = json.Unmarshal([]byte(data), &m)
-	// fmt.Println(m.Time)
-	fmt.Println(m.Time.AddMonth(2, 1))
+	fmt.Println(now.Before(beam.Parse("2024"))) // 在指定时间之前 (t < u): true
+	fmt.Println(now.After(beam.Parse("2024")))  // 在指定时间之后 (t > u): false
+	fmt.Println(now.Equal(beam.Parse("2024")))  // 是否相等: false
 }
