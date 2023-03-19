@@ -60,9 +60,9 @@ func (t Time) Add(d time.Duration) Time {
 // Go 去 年[, 月[, 日]]。若不传 [天数] 则月份不会溢出。
 // y 在当前年的基础上偏移 ±y 年，a[0], a[1] 指定到确切的月、日。
 // 如果 [月、日] 为负数，则从最后的月、日开始偏移。
-func (t Time) Go(y int, a ...int) Time {
-	a = append(a, []int{0, 0}...)
-	m, d := a[0], a[1]
+func (t Time) Go(y int, md ...int) Time {
+	md = append(md, []int{0, 0}...)
+	m, d := md[0], md[1]
 
 	if m != 0 {
 		mm := int(math.Min(12, math.Abs(float64(m))))
