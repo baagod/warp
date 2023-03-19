@@ -107,7 +107,7 @@ beam.Since(now) // 自 now 到现在所经过的持续时间: 0s
 ```go
 IsLeap(2023) // 是否闰年: false
 now.IsZero() // now 是否零时，即第1年1月1日 00:00:00 UTC: false
-now.Compare(beam.Parse("2024")) // 小于指定日期则返回 -1，大于返回 1，等于返回 0。
+now.Compare(beam.Parse("2024")) // 小于指定的日期返回 -1，大于返回 1，等于返回 0。
 ```
 
 ### 时间字符串
