@@ -53,11 +53,11 @@ now.GoDay(10)      // 本月10号: 2023-03-10 15:05:27.792
 ### 时间相差
 
 ```go
-now.InYears(beam.MustParse("2024-03-19"))   // 相差几年: 1
-now.InDays(beam.MustParse("2024-03-19"))    // 相差几天: 365
-now.InHours(beam.MustParse("2024-03-19"))   // 相差几时: 8768
-now.InMinute(beam.MustParse("2024-03-19"))  // 相差几分: 526134
-now.InSeconds(beam.MustParse("2024-03-19")) // 相差几秒: 31568072
+now.InYears(beam.Parse("2024-03-19"))   // 相差几年: 1
+now.InDays(beam.Parse("2024-03-19"))    // 相差几天: 365
+now.InHours(beam.Parse("2024-03-19"))   // 相差几时: 8768
+now.InMinute(beam.Parse("2024-03-19"))  // 相差几分: 526134
+now.InSeconds(beam.Parse("2024-03-19")) // 相差几秒: 31568072
 ```
 
 ### 字符串值
