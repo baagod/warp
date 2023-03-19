@@ -94,27 +94,35 @@ func (t Time) GoDay(d int) Time {
 	return t.Go(0, 0, d)
 }
 
-// StartYear 本年开始时间
-func (t Time) StartYear(y ...int) Time {
-	year := t.Year() + append(y, 0)[0]
-	_t := time.Date(year, 1, 1, 0, 0, 0, 0, time.Local)
+// StartYear +y 年后第 m 月 d 日的开始时间
+func (t Time) StartYear(ymd ...int) Time {
+	y, m, d := t.Year(), 1, 1
+	if ymd != nil {
+		y += ymd[0]
+	}
+
+	if len(ymd) > 1 && ymd[1] > 0 {
+		m = ymd[1]
+	}
+
+	if len(ymd) > 2 && ymd[2] > 0 {
+		d = ymd[2]
+	}
+
+	_t := time.Date(y, time.Month(m), d, 0, 0, 0, 0, time.Local)
 	return Time{time: _t}
 }
 
-// StartMonth 本月开始时间
-func (t Time) StartMonth(m ...int) Time {
-	mm := t.Month() + append(m, 0)[0]
-	month := time.Month(math.Min(12, float64(mm)))
-	_t := time.Date(t.Year(), month, 1, 0, 0, 0, 0, time.Local)
-	return Time{time: _t}
+// StartMonth +m 月后第 d 日的开始时间
+func (t Time) StartMonth(md ...int) Time {
+	md = append(md, 0, 0)
+	return t.StartYear(0, t.Month()+md[0], md[1])
 }
 
-// StartDay 当天开始时间
+// StartDay +d 日的开始时间
 func (t Time) StartDay(d ...int) Time {
 	dd := t.Day() + append(d, 0)[0]
-	dd = int(math.Min(float64(t.Days()), float64(dd)))
-	_t := time.Date(t.Year(), time.Month(t.Month()), dd, 0, 0, 0, 0, time.Local)
-	return Time{time: _t}
+	return t.StartYear(0, t.Month(), dd)
 }
 
 // StartWeek 本周开始时间
