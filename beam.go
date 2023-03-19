@@ -305,7 +305,7 @@ func (t Time) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON 将 JSON 字符串转为 t 时调用
 func (t *Time) UnmarshalJSON(b []byte) (err error) {
-	*t, err = Parse(string(b))
+	*t, err = ParseE(string(b))
 	return
 }
 

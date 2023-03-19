@@ -25,8 +25,8 @@ var (
 	}
 )
 
-// Parse 解析 value 并返回它所表示的时间
-func Parse[T int | int64 | string](value T) (t Time, err error) {
+// ParseE 解析 value 并返回它所表示的时间
+func ParseE[T int | int64 | string](value T) (t Time, err error) {
 	v := fmt.Sprintf("%v", value)
 	v = strings.Trim(v, `"`)
 
@@ -52,9 +52,9 @@ func Parse[T int | int64 | string](value T) (t Time, err error) {
 	return Time{_t}, err
 }
 
-// MustParse 返回忽略错误的 Parse()
-func MustParse[T int | int64 | string](value T) Time {
-	t, _ := Parse(value)
+// Parse 返回忽略错误的 ParseE()
+func Parse[T int | int64 | string](value T) Time {
+	t, _ := ParseE(value)
 	return t
 }
 
