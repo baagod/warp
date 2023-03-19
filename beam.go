@@ -1,6 +1,7 @@
 package beam
 
 import (
+	"database/sql/driver"
 	"math"
 	"time"
 )
