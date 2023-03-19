@@ -16,7 +16,7 @@ go get github.com/baa-god/beam
 now := beam.Now() // 现在: 2023-03-19 15:05:27.792
 
 beam.New(time.Now())            // 通过 time.Time 创建
-beam.Unix(now.Unix(), 0)        // 通过秒时间戳
+beam.Unix(now.Unix())           // 通过秒时间戳
 beam.UnixMilli(now.UnixMilli()) // 通过毫秒时间戳
 beam.UnixMicro(now.UnixMicro()) // 通过微秒时间戳
 beam.UnixNano(now.UnixNano())   // 通过纳秒时间戳

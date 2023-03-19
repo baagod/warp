@@ -346,8 +346,8 @@ func (t *Time) UnmarshalJSON(b []byte) (err error) {
 
 // ----
 
-func Unix(sec, nsec int64) Time {
-	return Time{time: time.Unix(sec, nsec)}
+func Unix(sec int64) Time {
+	return Time{time: time.Unix(sec, 0)}
 }
 
 func UnixMilli(msec int64) Time {
