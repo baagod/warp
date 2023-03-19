@@ -21,6 +21,7 @@ beam.UnixMilli(now.UnixMilli()) // 通过毫秒时间戳
 beam.UnixMicro(now.UnixMicro()) // 通过微秒时间戳
 beam.UnixNano(now.UnixNano())   // 通过纳秒时间戳
 beam.Prase("2023-03-19")        // 通过解析时间字符串
+beam.Layout("2006-01-02", "2023-03-19") // 通过布局创建
 ```
 
 ### 开始时间
@@ -116,4 +117,5 @@ now.Compare(beam.Parse("2024")) // 小于指定的日期返回 -1，大于返回
 now.String()   // 毫秒字符串: 2023-03-19 15:05:27.792
 now.DateTime() // 日期和时间: 2023-03-19 15:05:27
 now.DateOnly() // 日期字符串: 2023-03-19
+now.Format("2006年01年02日") // 格式化字符串: 2023年03月19日
 ```

@@ -44,6 +44,18 @@ func Parse(value string) Time {
 	return t
 }
 
+// LayoutE 通过 layout 和 value 解析并返回它所表示的时间
+func LayoutE(layout string, value string) (Time, error) {
+	t, err := time.ParseInLocation(layout, value, time.Local)
+	return Time{time: t}, err
+}
+
+// Layout 返回忽略错误的 LayoutE()
+func Layout(layout string, value string) (t Time) {
+	t, _ = LayoutE(layout, value)
+	return
+}
+
 func (t Time) String() string {
 	return t.time.Format(time.DateTime + ".000")
 }
@@ -54,4 +66,8 @@ func (t Time) DateOnly() string {
 
 func (t Time) DateTime() string {
 	return t.time.Format(time.DateTime)
+}
+
+func (t Time) Format(layout string) string {
+	return t.time.Format(layout)
 }
