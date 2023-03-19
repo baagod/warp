@@ -285,6 +285,11 @@ func (t Time) Compare(u Time) int {
 	return t.time.Compare(u.time)
 }
 
+// IsZero 返回 t 是否零时刻
+func (t Time) IsZero() bool {
+	return t.time.IsZero()
+}
+
 // UTC 返回 UTC 时区的 t
 func (t Time) UTC() Time {
 	return Time{time: t.time.UTC()}
@@ -303,11 +308,6 @@ func (t Time) In(loc *time.Location) Time {
 // Location 返回 t 关联的时区信息
 func (t Time) Location() *time.Location {
 	return t.time.Location()
-}
-
-// IsZero 返回 t 是否零时刻
-func (t Time) IsZero() bool {
-	return t.time.IsZero()
 }
 
 // Time 返回 t 的 time.Time
