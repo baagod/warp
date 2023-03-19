@@ -331,6 +331,10 @@ func UnixMicro(usec int64) Time {
 	return Time{time: time.UnixMicro(usec)}
 }
 
+func UnixNano(nsec int64) Time {
+	return Time{time: time.Unix(0, nsec)}
+}
+
 // Since 返回自 t 以来经过时间。它是 Now().Sub(t) 的简写。
 func Since(t Time) time.Duration {
 	return time.Since(t.time)

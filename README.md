@@ -10,8 +10,17 @@ go get github.com/baa-god/beam
 
 ## 使用
 
+### 创建时间
+
 ```go
 now := beam.Now() // 现在: 2023-03-19 15:05:27.792
+
+beam.New(time.Now())            // 通过 time.Time 创建
+beam.Unix(now.Unix(), 0)        // 通过秒时间戳
+beam.UnixMilli(now.UnixMilli()) // 通过毫秒时间戳
+beam.UnixMicro(now.UnixMicro()) // 通过微秒时间戳
+beam.UnixNano(now.UnixNano())   // 通过纳秒时间戳
+beam.Prase("2023-03-19")        // 通过解析时间字符串
 ```
 
 ### 开始时间
@@ -54,17 +63,54 @@ now.GoMonth(-3, 2) // 今年倒数第3月(10月)2号: 2023-10-02 15:05:27.792
 now.GoDay(10)      // 本月10号: 2023-03-10 15:05:27.792
 ```
 
-### 时间相差
+### 获取时间
 
 ```go
-now.InYears(beam.Parse("2024-03-19"))   // 相差几年: 1
-now.InDays(beam.Parse("2024-03-19"))    // 相差几天: 365
-now.InHours(beam.Parse("2024-03-19"))   // 相差几时: 8768
-now.InMinute(beam.Parse("2024-03-19"))  // 相差几分: 526134
-now.InSeconds(beam.Parse("2024-03-19")) // 相差几秒: 31568072
+now.Year()    // 今年: 2023
+now.YearDay() // 今年的第几天，平年 1-365，闰年 1-366: 78
+now.Month()   // 本月: 3
+now.Day()     // 今天: 19
+now.Days()    // 本月最大天数: 31
+now.Hour()    // 此时: 15
+now.Minute()  // 此分: 5
+now.Second()  // 此秒: 27
+now.Milli()   // 毫秒: 792
+now.Micro()   // 微秒: 792000
+now.Nano()    // 纳秒: 792000000
+beam.DaysIn(2024, 2) // 2024 年 2 月的最大天数: 29
+now.Time()           // 返回 now 的 time.Time
 ```
 
-### 字符串值
+### 时间戳
+
+```go
+now.Unix()      // 秒时间戳: 1679209527
+now.UnixMilli() // 毫秒时间戳: 1679209527792
+now.UnixMicro() // 微秒时间戳: 1679209527792000
+now.UnixNano()  // 纳秒时间戳: 1679209527792000000
+```
+
+### 时间差
+
+```go
+now.InYears(beam.Parse("2024-03-19"))          // 相差几年: 1
+now.InDays(beam.Parse("2024-03-19"))           // 相差几天: 365
+now.InHours(beam.Parse("2024-03-19"))          // 相差几时: 8768
+now.InMinute(beam.Parse("2024-03-19"))         // 相差几分: 526134
+now.InSeconds(beam.Parse("2024-03-19"))        // 相差几秒: 31568072
+now.Sub(beam.Parse("2023-03-19 16:04:27.792")) // 时间差: 1h0m0s
+beam.Since(now) // 自 now 到现在所经过的持续时间: 0s
+```
+
+### 时间判断
+
+```go
+IsLeap(2023) // 是否闰年: false
+now.IsZero() // now 是否零时，即第1年1月1日 00:00:00 UTC: false
+now.Compare(beam.Parse("2024")) // 小于指定日期则返回 -1，大于返回 1，等于返回 0。
+```
+
+### 时间字符串
 
 ```go
 now.String()   // 毫秒字符串: 2023-03-19 15:05:27.792
