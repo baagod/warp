@@ -111,7 +111,7 @@ now.IsZero() // 是否零时，即第1年1月1日 00:00:00 UTC: false
 now.Compare(beam.Parse("2024")) // 小于指定的日期返回 -1，大于返回 1，等于返回 0: -1
 now.Before(beam.Parse("2024"))  // 在指定时间之前 (t < u): true 
 now.After(beam.Parse("2024"))   // 在指定时间之后 (t > u): false
-now.Equal(beam.Parse("2024"))   // 是否相等: false
+now.Equal(beam.Parse("2024"))   // 时间相等: false
 ```
 
 ### 时间字符串
