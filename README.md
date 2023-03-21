@@ -4,6 +4,8 @@ golang 时间包
 
 ## 安装
 
+需要 Go 1.19+ 版本。
+
 ```shell
 go get github.com/baa-god/beam
 ```
