@@ -172,13 +172,18 @@ func (t Time) InHours(u Time) int {
 }
 
 // InMinute 返回 t 与 u 的分差
-func (t Time) InMinute(u Time) int {
+func (t Time) InMinutes(u Time) int {
 	return int(t.Sub(u).Abs().Minutes())
 }
 
 // InSeconds 返回 t 与 u 的秒差
 func (t Time) InSeconds(u Time) int {
 	return int(t.Sub(u).Abs().Seconds())
+}
+
+// InMillis 返回 t 与 u 毫秒差
+func (t Time) InMillis(u Time) int {
+	return int(t.Sub(u).Abs().Milliseconds())
 }
 
 // Sub 返回 t - u 的时间差
