@@ -98,6 +98,11 @@ func (t Time) Go(y int, md ...int) Time {
 	return t.AddYear(y, m, d)
 }
 
+// GoYear 跟 Go() 一样，但是 y 指定去确切的年份而非偏移。
+func (t Time) GoYear(y int, md ...int) Time {
+	return t.Go(y-t.Year(), md...)
+}
+
 func (t Time) GoMonth(m int, d ...int) Time {
 	return t.Go(0, m, append(d, 0)[0])
 }
@@ -166,14 +171,19 @@ func (t Time) InHours(u Time) int {
 	return int(t.Sub(u).Abs().Hours())
 }
 
-// InMinute 返回 t 与 u 的分差
-func (t Time) InMinute(u Time) int {
+// InMinutes 返回 t 与 u 的分差
+func (t Time) InMinutes(u Time) int {
 	return int(t.Sub(u).Abs().Minutes())
 }
 
 // InSeconds 返回 t 与 u 的秒差
 func (t Time) InSeconds(u Time) int {
 	return int(t.Sub(u).Abs().Seconds())
+}
+
+// InMillis 返回 t 与 u 毫秒差
+func (t Time) InMillis(u Time) int {
+	return int(t.Sub(u).Abs().Milliseconds())
 }
 
 // Sub 返回 t - u 的时间差
