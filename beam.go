@@ -98,6 +98,11 @@ func (t Time) Go(y int, md ...int) Time {
 	return t.AddYear(y, m, d)
 }
 
+// GoYear 跟 Go() 一样，但是 y 指定的是确切的年份而非偏移。
+func (t Time) GoYear(y int, md ...int) Time {
+	return t.Go(y-t.Year(), md...)
+}
+
 func (t Time) GoMonth(m int, d ...int) Time {
 	return t.Go(0, m, append(d, 0)[0])
 }
