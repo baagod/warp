@@ -60,6 +60,13 @@ func (t Time) String() string {
 	return t.time.Format(time.DateTime + ".000")
 }
 
+func (t Time) StringOr(v string) string {
+	if t.IsZero() {
+		return v
+	}
+	return t.String()
+}
+
 func (t Time) DateOnly() string {
 	return t.time.Format(time.DateOnly)
 }

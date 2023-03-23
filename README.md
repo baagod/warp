@@ -121,6 +121,7 @@ now.Equal(beam.Parse("2024"))   // 时间相等: false
 
 ```go
 now.String()   // 毫秒字符串: 2023-03-19 15:05:27.792
+baem.Time{}.StringOr("default") // 用另一个字符串代替零时时间: default
 now.DateTime() // 日期和时间: 2023-03-19 15:05:27
 now.DateOnly() // 日期字符串: 2023-03-19
 now.Format("2006年01年02日") // 格式化字符串: 2023年03月19日
