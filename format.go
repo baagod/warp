@@ -23,7 +23,7 @@ var (
 )
 
 // ParseE 解析 value 并返回它所表示的时间
-func ParseE(value string) (t Time, err error) {
+func ParseE(value string, loc ...*time.Location) (t Time, err error) {
 	value = strings.Trim(value, `"`)
 
 	var layout string
@@ -33,8 +33,12 @@ func ParseE(value string) (t Time, err error) {
 			break
 		}
 	}
+	
+	if loc == nil {
+		loc = append(loc, time.UTC)
+	}
 
-	_t, err := time.ParseInLocation(layout, value, time.Local)
+	_t, err := time.ParseInLocation(layout, value, loc[0])
 	return Time{_t}, err
 }
 
