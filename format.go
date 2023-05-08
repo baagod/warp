@@ -43,8 +43,8 @@ func ParseE(value string, loc ...*time.Location) (t Time, err error) {
 }
 
 // Parse 返回忽略错误的 ParseE()
-func Parse(value string) Time {
-	t, _ := ParseE(value)
+func Parse(value string, loc ...*time.Location) Time {
+	t, _ := ParseE(value, loc...)
 	return t
 }
 
