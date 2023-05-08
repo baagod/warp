@@ -377,7 +377,7 @@ func Since(t Time) time.Duration {
 	return time.Since(t.time)
 }
 
-// Until 返回直到 t 的持续时间。它是 Sub(Now()) 的简写。
+// Until 返回直到 t 的持续时间。它是 t.Sub(Now()) 的简写。
 func Until(t Time) time.Duration {
 	return time.Until(t.time)
 }
