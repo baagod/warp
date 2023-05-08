@@ -377,6 +377,11 @@ func Since(t Time) time.Duration {
 	return time.Since(t.time)
 }
 
+// Until 返回直到 t 的持续时间。它是 Sub(Now()) 的简写。
+func Until(t Time) time.Duration {
+	return time.Until(t.time)
+}
+
 // IsLeap 返回 year 是否闰年
 func IsLeap(year int) bool {
 	return year%4 == 0 && (year%100 != 0 || year%400 == 0)
