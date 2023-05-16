@@ -33,9 +33,9 @@ func ParseE(value string, loc ...*time.Location) (t Time, err error) {
 			break
 		}
 	}
-	
+
 	if loc == nil {
-		loc = append(loc, time.UTC)
+		loc = append(loc, time.Local)
 	}
 
 	_t, err := time.ParseInLocation(layout, value, loc[0])
