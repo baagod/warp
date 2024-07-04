@@ -7,7 +7,7 @@ golang 时间包
 需要 Go 1.19+ 版本。
 
 ```shell
-go get github.com/baagod/warp
+go get -u github.com/baagod/warp@main
 ```
 
 ## 使用
