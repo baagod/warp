@@ -1,3 +1,3 @@
-module github.com/baa-god/warp
+module github.com/baagod/warp
 
 go 1.19
