@@ -1,4 +1,4 @@
-# beam
+# warp
 
 golang 时间包
 
@@ -7,7 +7,7 @@ golang 时间包
 需要 Go 1.19+ 版本。
 
 ```shell
-go get github.com/baa-god/beam
+go get github.com/baa-god/warp
 ```
 
 ## 使用
