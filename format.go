@@ -1,6 +1,7 @@
 package warp
 
 import (
+	"errors"
 	"regexp"
 	"strings"
 	"time"
@@ -23,7 +24,7 @@ var (
 )
 
 // ParseE 解析 value 并返回它所表示的时间
-func ParseE(value string, loc ...*time.Location) (t Time, err error) {
+func ParseE(value string, loc ...*time.Location) (Time, error) {
 	value = strings.Trim(value, `"`)
 
 	var layout string
@@ -38,8 +39,12 @@ func ParseE(value string, loc ...*time.Location) (t Time, err error) {
 		loc = append(loc, time.Local)
 	}
 
-	_t, err := time.ParseInLocation(layout, value, loc[0])
-	return Time{_t}, err
+	pt, err := time.ParseInLocation(layout, value, loc[0])
+	if err == nil && pt.Year() < 1000 {
+		return Time{}, errors.New("年份超出有效范围")
+	}
+
+	return Time{pt}, err
 }
 
 // Parse 返回忽略错误的 ParseE()
