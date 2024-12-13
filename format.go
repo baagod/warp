@@ -1,36 +1,72 @@
 package warp
 
 import (
-	"errors"
+	"fmt"
 	"regexp"
 	"strings"
 	"time"
 )
 
-var (
-	patterns = [][2]string{
-		{"2006-01-02 15:04:05", `\d{4}(-\d{2}){2} \d{2}(:\d{2}){2}(.\d{1,9})?`},
-		{"2006/01/02 15:04:05", `\d{4}(\/\d{2}){2} \d{2}(:\d{2}){2}(.\d{1,9})?`},
-		{"2006-01-02 15:04", `\d{4}(-\d{2}){2} \d{2}:\d{2}`},
-		{"2006/01/02 15:04", `\d{4}(\/\d{2}){2} \d{2}:\d{2}`},
-		{"2006-01-02 15", `\d{4}(-\d{2}){2} \d{2}`},
-		{"2006/01/02 15", `\d{4}(\/\d{2}){2} \d{2}`},
-		{"2006-01-02", `\d{4}(-\d{2}){2}`},
-		{"15:04:05", `\d{2}(:\d{2}){2}(.\d{1,9})?`},
-		{"2006-01", `\d{4}-\d{2}`},
-		{"15:04", `\d{2}:\d{2}`},
-		{"2006", `\d{4}`},
-	}
+const (
+	Layout      = "01/02 03:04:05PM '06 -0700" // The reference time, in numerical order.
+	ANSIC       = "Mon Jan _2 15:04:05 2006"
+	UnixDate    = "Mon Jan _2 15:04:05 MST 2006"
+	RubyDate    = "Mon Jan 02 15:04:05 -0700 2006"
+	RFC822      = "02 Jan 06 15:04 MST"
+	RFC822Z     = "02 Jan 06 15:04 -0700" // RFC822 with numeric zone
+	RFC850      = "Monday, 02-Jan-06 15:04:05 MST"
+	RFC1123     = "Mon, 02 Jan 2006 15:04:05 MST"
+	RFC1123Z    = "Mon, 02 Jan 2006 15:04:05 -0700" // RFC1123 with numeric zone
+	RFC3339     = "2006-01-02T15:04:05Z07:00"
+	RFC3339Nano = "2006-01-02T15:04:05.999999999Z07:00"
+	Kitchen     = "3:04PM"
+	Stamp       = "Jan _2 15:04:05"
+	StampMilli  = "Jan _2 15:04:05.000"
+	StampMicro  = "Jan _2 15:04:05.000000"
+	StampNano   = "Jan _2 15:04:05.000000000"
+	DateTime    = "2006-01-02 15:04:05"
+	DateOnly    = "2006-01-02"
+	TimeOnly    = "15:04:05"
 )
+
+const (
+	dateonly = `\d{4}(-\d{2}){2}`
+	datetime = `(\d{2}:){2}\d{2}(\.\d{1,9})?`
+	mst      = `[A-Z]{3,4}([+\-]\d{1,2})?`
+	z0700    = `[+\-]\d{4}`
+)
+
+var patterns = map[string]*regexp.Regexp{
+	"2006-01-02T15:04:05.999999999Z07:00": compile(`%sT%s(Z|[+\-]\d{2}:\d{2})`, dateonly, datetime),
+	"Mon, 02 Jan 2006 15:04:05 -0700":     compile(`(?i)[a-z]{3}, \d{2} (?i)[a-z]{3} \d{4} %s %s`, datetime, z0700),
+	"Monday, 02-Jan-06 15:04:05 MST":      compile(`(?i)(Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day, \d{2}-(?i)[a-z]{3}-\d{2} %s %s`, datetime, mst),
+	"Mon Jan 02 15:04:05 -0700 2006":      compile(`(?i)([a-z]{3} ){2}\d{2} %s %s \d{4}`, z0700, datetime),
+	"Mon, 02 Jan 2006 15:04:05 MST":       compile(`(?i)[a-z]{3}, \d{2} (?i)[a-z]{3} \d{4} %s %s`, datetime, mst),
+	"Mon Jan _2 15:04:05 MST 2006":        compile(`(?i)([a-z]{3} ){2}\d{1,2} %s %s \d{4}`, datetime, mst),
+	"01/02 03:04:05PM '06 -0700":          compile(`\d{2}/\d{2} %s[AP]M '\d{2} %s`, datetime, z0700),
+	"Mon Jan _2 15:04:05 2006":            compile(`(?i)([a-z]{3} ){2}\d{1,2} %s \d{4}`, datetime),
+	"02 Jan 06 15:04 -0700":               compile(`\d{2} (?i)[a-z]{3} \d{2} \d{2}:\d{2} %s`, z0700),
+	"02 Jan 06 15:04 MST":                 compile(`\d{2} (?i)[a-z]{3} \d{2} \d{2}:\d{2} %s`, mst),
+	"2006-01-02 15:04:05":                 compile(dateonly + " " + datetime),
+	"2006-01-02 15:04":                    compile(dateonly + ` \d{2}:\d{2}`),
+	"Jan _2 15:04:05":                     compile(`(?i)[a-z]{3} \d{1,2} ` + datetime),
+	"2006-01-02 15":                       compile(dateonly + ` \d{2}`),
+	"2006-01-02":                          compile(dateonly),
+	"15:04:05":                            compile(datetime),
+	"2006-01":                             compile(`\d{4}-\d{2}`),
+	"3:04PM":                              compile(`\d{1,2}:\d{2}[AP]M`),
+	"15:04":                               compile(`\d{2}:\d{2}`),
+	"2006":                                compile(`\d{4}`),
+}
 
 // ParseE 解析 value 并返回它所表示的时间
 func ParseE(value string, loc ...*time.Location) (Time, error) {
+	var layout string
 	value = strings.Trim(value, `"`)
 
-	var layout string
-	for _, x := range patterns {
-		if ok, _ := regexp.MatchString(x[1], value); ok {
-			layout = x[0]
+	for k, v := range patterns {
+		if v.MatchString(value) {
+			layout = k
 			break
 		}
 	}
@@ -40,10 +76,6 @@ func ParseE(value string, loc ...*time.Location) (Time, error) {
 	}
 
 	pt, err := time.ParseInLocation(layout, value, loc[0])
-	if err == nil && pt.Year() < 1000 {
-		return Time{}, errors.New("年份超出有效范围")
-	}
-
 	return Time{pt}, err
 }
 
@@ -53,18 +85,6 @@ func Parse(value string, loc ...*time.Location) Time {
 	return t
 }
 
-// LayoutE 通过 layout 和 value 解析并返回它所表示的时间
-func LayoutE(layout string, value string) (Time, error) {
-	t, err := time.ParseInLocation(layout, value, time.Local)
-	return Time{time: t}, err
-}
-
-// Layout 返回忽略错误的 LayoutE()
-func Layout(layout string, value string) (t Time) {
-	t, _ = LayoutE(layout, value)
-	return
-}
-
-func (t Time) DateTime() string {
-	return t.time.Format(time.DateTime)
+func compile(s string, a ...any) *regexp.Regexp {
+	return regexp.MustCompile("^" + fmt.Sprintf(s, a...) + "$")
 }

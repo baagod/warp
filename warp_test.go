@@ -1,20 +1,24 @@
 package warp
 
 import (
-	"encoding/json"
 	"fmt"
 	"testing"
+	"time"
 )
 
-type Order struct {
-	Time Time `gorm:"column:fldSC_SetTime" json:"fldSC_SetTime"` // 手术结算月
+func TestWarp(t *testing.T) {
+	pt, err := time.Parse(time.Stamp, "Feb 12 15:04:05.221")
+	// pt, err := ParseE("January 12 15:04:05")
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+
+	fmt.Println("time:", pt.Format(time.DateTime+".999"))
 }
 
-func TestFunc(t *testing.T) {
-	data := `{"fldSC_SetTime": "0001-01-01 00:00:00"}`
-	var o Order
-
-	err := json.Unmarshal([]byte(data), &o)
-	fmt.Println("Unmarshal error:", err)
-	fmt.Printf("order: %+v, isZero: %v\n", o, o.Time.IsZero())
+func BenchmarkParse(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_ = Parse("2024-01-02")
+	}
 }

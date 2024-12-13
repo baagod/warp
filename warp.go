@@ -7,10 +7,6 @@ import (
 	"time"
 )
 
-const (
-	DateTimeMilli = time.DateTime + ".000"
-)
-
 var (
 	// 每个月的最大天数
 	maxDays = [13]int{0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
@@ -377,7 +373,7 @@ func (t Time) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON 将 JSON 字符串转为 t 时调用
 func (t *Time) UnmarshalJSON(b []byte) (err error) {
 	s := strings.TrimSpace(string(b))
-	if s == "" || s == `""` || strings.HasPrefix(s, `"0001`) {
+	if s == "" || s == `""` {
 		*t = Time{}
 		return nil
 	}
