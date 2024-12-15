@@ -61,13 +61,12 @@ var patterns = map[string]*regexp.Regexp{
 
 // ParseE 解析 value 并返回它所表示的时间
 func ParseE(value string, loc ...*time.Location) (Time, error) {
-	var layout string
 	value = strings.Trim(strings.TrimSpace(value), `"`)
-
 	if value == "" || value == `""` {
 		return Time{}, nil
 	}
 
+	var layout string
 	for k, v := range patterns {
 		if v.MatchString(value) {
 			layout = k
