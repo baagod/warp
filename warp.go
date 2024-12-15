@@ -3,7 +3,6 @@ package warp
 import (
 	"database/sql/driver"
 	"math"
-	"strings"
 	"time"
 )
 
@@ -376,12 +375,7 @@ func (t Time) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON 将 JSON 字符串转为 t 时调用
 func (t *Time) UnmarshalJSON(b []byte) (err error) {
-	s := strings.TrimSpace(string(b))
-	if s == "" || s == `""` || strings.HasPrefix(s, `"0001`) {
-		*t = Time{}
-		return nil
-	}
-	*t, err = ParseE(s)
+	*t, err = ParseE(string(b))
 	return
 }
 
