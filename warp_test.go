@@ -7,13 +7,15 @@ import (
 )
 
 func TestWarp(t *testing.T) {
-	pt, err := time.Parse(time.Stamp, "Feb 12 15:04:05.221")
-	// pt, err := ParseE("January 12 15:04:05")
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-
+	pt := Parse("2024-02-29").Time()
+	pt = pt.AddDate(1, 0, 0)
+	// pt, err := time.Parse(time.Stamp, "Feb 12 15:04:05.221")
+	// // pt, err := ParseE("January 12 15:04:05")
+	// if err != nil {
+	// 	fmt.Println("Error:", err)
+	// 	return
+	// }
+	//
 	fmt.Println("time:", pt.Format(time.DateTime+".999"))
 }
 
