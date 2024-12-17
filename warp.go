@@ -23,78 +23,68 @@ func Now() Time {
 	return Time{time: time.Now()}
 }
 
-func Date(year int, month int, day, hour, min, sec, nsec int, loc *time.Location) Time {
-	t := time.Date(year, time.Month(month), day, hour, min, sec, nsec, loc)
-	return Time{t}
+func Date[Month ~int](
+	year int, month Month, day,
+	hour, min, sec, nsec int, loc ...*time.Location,
+) Time {
+	if loc == nil {
+		loc = append(loc, time.Local)
+	}
+	m := time.Month(month)
+	return Time{time: time.Date(year, m, day, hour, min, sec, nsec, loc[0])}
 }
 
-// AddYear 添加 [年月日]，如果不传天数 (参数d) 则月份不会溢出。默认添加一年。
+// AddYear 添加年月日。如果不指定参数 d 则年、月不会溢出。默认添加一年。
 func (t Time) AddYear(ymd ...int) Time {
-	y, m := 1, 0
+	year, month := 1, 0
 
-	switch len(ymd) {
-	case 1:
-		y = ymd[0]
-	case 2:
-		y, m = ymd[0], ymd[1]
-	case 3:
+	if i := len(ymd); i == 1 {
+		year = ymd[0]
+	} else if i == 2 {
+		year, month = ymd[0], ymd[1]
+	} else if i >= 3 {
 		return Time{time: t.time.AddDate(ymd[0], ymd[1], ymd[2])}
 	}
 
-	// 计算总月数偏移
-	totalMonths := y*12 + m + t.Month() - 1
-	newYear := t.Year() + totalMonths/12
-	newMonth := totalMonths%12 + 1
-
-	day := t.Day()                       // 获取原始日期
-	maxDays := DaysIn(newYear, newMonth) // 检查并调整日期
-	if day > maxDays {
-		day = maxDays
+	months := t.Month() + month                // 计算总月数
+	year += t.Year() + (months-1)/12           // 计算新的年份
+	if month = (months-1)%12 + 1; month <= 0 { // 计算剩余月数并处理负数情况
+		month += 12 // 将月份调整到正确范围 (1-12)
+		year--      // 由于月份向前偏移了一年，所以年份需要减 1。
 	}
 
-	// 创建新的时间
-	return Time{time: time.Date(
-		newYear, time.Month(newMonth), day,
+	day := t.Day()                                   // 获取原始日期
+	if maxDay := DaysIn(year, month); day > maxDay { // 处理溢出天数
+		day = maxDay
+	}
+
+	return Date(
+		year, month, day,
 		t.Hour(), t.Minute(), t.Second(), t.Nano(),
 		t.Location(),
-	)}
-
-	// mm := t.Month() + m
-	// yy := 0 // 计算 mm 偏移了多少年
-	// if mm > 12 {
-	// 	yy = (mm - 1) / 12
-	// } else if mm <= 0 {
-	// 	yy = mm/12 - 1
-	// }
-	//
-	// mm = ((mm-1)%12+12)%12 + 1                           // 目标月份
-	// if v := t.Day() - DaysIn(t.Year()+yy+y, mm); v > 0 { // 原天数 > 目标月份的最大天数
-	// 	d -= v // 减去超出的天数确保月份不会溢出
-	// }
-	//
-	// return Time{time: t.time.AddDate(y, m, d)}
+	)
 }
 
-// AddMonth 添加 [月日]，默认添加一月。
+// AddMonth 添加月日，默认添加一月。
 func (t Time) AddMonth(md ...int) Time {
 	m, d := 1, 0
-	if md != nil {
-		m = md[0]
-	}
 
-	if len(md) > 1 {
-		d = md[1]
+	switch i := len(md); {
+	case i == 1:
+		m = md[0]
+	case i >= 2:
+		m, d = md[0], md[1]
 	}
 
 	return t.AddYear(0, m, d)
 }
 
-// AddDay 添加天，默认添加一天。
+// AddDay 添加天数，默认添加一天。
 func (t Time) AddDay(d ...int) Time {
 	if d == nil {
 		d = append(d, 1)
 	}
-	return t.AddYear(0, 0, d[0])
+	return Time{time: t.time.AddDate(0, 0, d[0])}
 }
 
 // Add 返回 t + d 的时间
@@ -429,14 +419,6 @@ func DaysIn(y, m int) int {
 		return 29
 	}
 	return maxDays[m]
-}
-
-func (t Time) String() string {
-	return t.time.Format(time.DateTime)
-}
-
-func (t Time) Format(layout string) string {
-	return t.time.Format(layout)
 }
 
 func (t Time) Or(e Time) Time {

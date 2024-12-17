@@ -37,32 +37,32 @@ const (
 )
 
 var patterns = map[string]*regexp.Regexp{
-	"2006-01-02T15:04:05.999999999Z07:00": compile(`%sT%s(Z|[+\-]\d{2}:\d{2})`, dateonly, datetime),
-	"Mon, 02 Jan 2006 15:04:05 -0700":     compile(`(?i)[a-z]{3}, \d{2} (?i)[a-z]{3} \d{4} %s %s`, datetime, z0700),
-	"Monday, 02-Jan-06 15:04:05 MST":      compile(`(?i)(Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day, \d{2}-(?i)[a-z]{3}-\d{2} %s %s`, datetime, mst),
-	"Mon Jan 02 15:04:05 -0700 2006":      compile(`(?i)([a-z]{3} ){2}\d{2} %s %s \d{4}`, z0700, datetime),
-	"Mon, 02 Jan 2006 15:04:05 MST":       compile(`(?i)[a-z]{3}, \d{2} (?i)[a-z]{3} \d{4} %s %s`, datetime, mst),
-	"Mon Jan _2 15:04:05 MST 2006":        compile(`(?i)([a-z]{3} ){2}\d{1,2} %s %s \d{4}`, datetime, mst),
-	"01/02 03:04:05PM '06 -0700":          compile(`\d{2}/\d{2} %s[AP]M '\d{2} %s`, datetime, z0700),
-	"Mon Jan _2 15:04:05 2006":            compile(`(?i)([a-z]{3} ){2}\d{1,2} %s \d{4}`, datetime),
-	"02 Jan 06 15:04 -0700":               compile(`\d{2} (?i)[a-z]{3} \d{2} \d{2}:\d{2} %s`, z0700),
-	"02 Jan 06 15:04 MST":                 compile(`\d{2} (?i)[a-z]{3} \d{2} \d{2}:\d{2} %s`, mst),
-	"2006-01-02 15:04:05":                 compile(dateonly + " " + datetime),
-	"2006-01-02 15:04":                    compile(dateonly + ` \d{2}:\d{2}`),
-	"Jan _2 15:04:05":                     compile(`(?i)[a-z]{3} \d{1,2} ` + datetime),
-	"2006-01-02 15":                       compile(dateonly + ` \d{2}`),
-	"2006-01-02":                          compile(dateonly),
-	"15:04:05":                            compile(datetime),
-	"2006-01":                             compile(`\d{4}-\d{2}`),
-	"3:04PM":                              compile(`\d{1,2}:\d{2}[AP]M`),
-	"15:04":                               compile(`\d{2}:\d{2}`),
-	"2006":                                compile(`\d{4}`),
+	"2006":                                re(`\d{4}`),
+	"15:04":                               re(`\d{2}:\d{2}`),
+	"3:04PM":                              re(`\d{1,2}:\d{2}[AP]M`),
+	"2006-01":                             re(`\d{4}-\d{2}`),
+	"15:04:05":                            re(datetime),
+	"2006-01-02":                          re(dateonly),
+	"2006-01-02 15":                       re(dateonly + ` \d{2}`),
+	"Jan _2 15:04:05":                     re(`(?i)[a-z]{3} \d{1,2} ` + datetime),
+	"2006-01-02 15:04":                    re(dateonly + ` \d{2}:\d{2}`),
+	"2006-01-02 15:04:05":                 re(dateonly + " " + datetime),
+	"02 Jan 06 15:04 MST":                 re(`\d{2} (?i)[a-z]{3} \d{2} \d{2}:\d{2} %s`, mst),
+	"02 Jan 06 15:04 -0700":               re(`\d{2} (?i)[a-z]{3} \d{2} \d{2}:\d{2} %s`, z0700),
+	"Mon Jan _2 15:04:05 2006":            re(`(?i)([a-z]{3} ){2}\d{1,2} %s \d{4}`, datetime),
+	"01/02 03:04:05PM '06 -0700":          re(`\d{2}/\d{2} %s[AP]M '\d{2} %s`, datetime, z0700),
+	"Mon Jan _2 15:04:05 MST 2006":        re(`(?i)([a-z]{3} ){2}\d{1,2} %s %s \d{4}`, datetime, mst),
+	"Mon, 02 Jan 2006 15:04:05 MST":       re(`(?i)[a-z]{3}, \d{2} (?i)[a-z]{3} \d{4} %s %s`, datetime, mst),
+	"Mon Jan 02 15:04:05 -0700 2006":      re(`(?i)([a-z]{3} ){2}\d{2} %s %s \d{4}`, z0700, datetime),
+	"Monday, 02-Jan-06 15:04:05 MST":      re(`(?i)(Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day, \d{2}-(?i)[a-z]{3}-\d{2} %s %s`, datetime, mst),
+	"Mon, 02 Jan 2006 15:04:05 -0700":     re(`(?i)[a-z]{3}, \d{2} (?i)[a-z]{3} \d{4} %s %s`, datetime, z0700),
+	"2006-01-02T15:04:05.999999999Z07:00": re(`%sT%s(Z|[+\-]\d{2}:\d{2})`, dateonly, datetime),
 }
 
 // ParseE 解析 value 并返回它所表示的时间
 func ParseE(value string, loc ...*time.Location) (Time, error) {
 	value = strings.Trim(strings.TrimSpace(value), `"`)
-	if value == "" || value == `""` {
+	if value == "" {
 		return Time{}, nil
 	}
 
@@ -88,6 +88,14 @@ func Parse(value string, loc ...*time.Location) Time {
 	return t
 }
 
-func compile(s string, a ...any) *regexp.Regexp {
+func (t Time) String() string {
+	return t.time.Format(time.DateTime)
+}
+
+func (t Time) Format(layout string) string {
+	return t.time.Format(layout)
+}
+
+func re(s string, a ...any) *regexp.Regexp {
 	return regexp.MustCompile("^" + fmt.Sprintf(s, a...) + "$")
 }
