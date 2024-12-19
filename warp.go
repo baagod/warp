@@ -38,30 +38,31 @@ func Date[Month ~int](
 
 // AddYear 添加年月日，指定 d 参数时年、月会溢出。默认添加一年。
 func (t Time) AddYear(ymd ...int) Time {
-	year, month := 1, 0
+	y, m := 1, 0
 
-	if i := len(ymd); i == 1 {
-		year = ymd[0]
-	} else if i == 2 {
-		year, month = ymd[0], ymd[1]
-	} else if i > 2 {
-		return Time{time: t.time.AddDate(ymd[0], ymd[1], ymd[2])}
+	if i := len(ymd); i > 0 {
+		if y = ymd[0]; i > 1 {
+			m = ymd[1]
+		}
+		if i > 2 {
+			return Time{time: t.time.AddDate(y, m, ymd[2])}
+		}
 	}
 
-	months := t.Month() + month                // 计算总月数
-	year += t.Year() + (months-1)/12           // 计算新的年份
-	if month = (months-1)%12 + 1; month <= 0 { // 计算剩余月数并处理负数情况
-		month += 12 // 将月份调整到正确范围 (1-12)
-		year--      // 由于月份向前偏移了一年，所以年份需要减 1。
+	months := t.Month() + m            // 计算总月数
+	y += t.Year() + (months-1)/12      // 计算新的年份
+	if m = (months-1)%12 + 1; m <= 0 { // 计算剩余月数并处理负数情况
+		m += 12 // 将月份调整到正确范围 (1-12)
+		y--     // 由于月份向前偏移了一年，所以年份需要减 1。
 	}
 
-	day := t.Day()                                   // 获取原始日期
-	if maxDay := DaysIn(year, month); day > maxDay { // 处理溢出天数
-		day = maxDay
+	d := t.Day()                            // 获取原始日期
+	if maxDay := DaysIn(y, m); d > maxDay { // 处理溢出天数
+		d = maxDay
 	}
 
 	return Date(
-		year, month, day,
+		y, m, d,
 		t.Hour(), t.Minute(), t.Second(), t.Second(9),
 		t.Location(),
 	)
@@ -69,24 +70,20 @@ func (t Time) AddYear(ymd ...int) Time {
 
 // AddMonth 添加月日，默认添加一月。
 func (t Time) AddMonth(md ...int) Time {
-	m, d := 1, 0
-
-	switch i := len(md); {
-	case i == 1:
-		m = md[0]
-	case i > 1:
-		m, d = md[0], md[1]
+	m := 1
+	if i := len(md); i <= 1 { // 不传天数以避免溢出
+		if i == 1 {
+			m = md[0]
+		}
+		return t.AddYear(0, m)
 	}
-
-	return t.AddYear(0, m, d)
+	return t.AddYear(0, m, md[1])
 }
 
 // AddDay 添加天数，默认添加一天。
 func (t Time) AddDay(d ...int) Time {
-	if d == nil {
-		d = append(d, 1)
-	}
-	return Time{time: t.time.AddDate(0, 0, d[0])}
+	d = append(d, 1)
+	return t.AddYear(0, 0, d[0])
 }
 
 // Add 返回 t + d 时间
@@ -144,19 +141,29 @@ func (t Time) GoDay(d int) Time {
 
 // ---- 开始时间 ----
 
-// Start 返回时间 t.Year()+y 年的 m 月 d 日开始时间
+// Start 它和 `AddYear(ymd ...int)` 类似，但是返回开始时间。
 func (t Time) Start(ymd ...int) Time {
-	y, m, d := t.Year(), 1, 1
+	y, m := 1, 0
 
-	if i := len(ymd); i == 1 {
-		y += ymd[0]
-	} else if i == 2 {
-		y, m = y+ymd[0], ymd[1]
-	} else if i > 2 {
-		y, m, d = y+ymd[0], ymd[1], ymd[2]
+	if i := len(ymd); i > 0 {
+		if y = ymd[0]; i > 1 {
+			m = ymd[1]
+		}
+		if i > 2 && ymd[0] != 0 {
+			u := t.time.AddDate(y, m, ymd[2])
+			return Date(u.Year(), u.Month(), u.Day(), 0, 0, 0, 0, t.Location())
+		}
 	}
 
-	if maxDay := DaysIn(y, m); d > maxDay {
+	months := t.Month() + m            // 计算总月数
+	y += t.Year() + (months-1)/12      // 计算新的年份
+	if m = (months-1)%12 + 1; m <= 0 { // 计算剩余月数并处理负数情况
+		m += 12 // 将月份调整到正确范围 (1-12)
+		y--     // 由于月份向前偏移了一年，所以年份需要减 1。
+	}
+
+	d := t.Day()                            // 获取原始日期
+	if maxDay := DaysIn(y, m); d > maxDay { // 处理溢出天数
 		d = maxDay
 	}
 
@@ -165,18 +172,19 @@ func (t Time) Start(ymd ...int) Time {
 
 // StartMonth 返回时间 t 的 m 月 d 日的开始时间
 func (t Time) StartMonth(md ...int) Time {
-	m, d := t.Month(), 1
-	if i := len(md); i == 1 {
-		m = md[0]
-	} else if i > 1 {
-		m, d = md[0], md[1]
+	m, d := 0, 0
+	if i := len(md); i > 0 {
+		if m = md[0]; i > 1 {
+			d = md[1]
+		}
 	}
 	return t.Start(0, m, d)
 }
 
 // StartDay 返回时间 t 的 d 日开始时间
-func (t Time) StartDay(d int) Time {
-	return t.Start(0, t.Month(), d)
+func (t Time) StartDay(d ...int) Time {
+	d = append(d, 0)
+	return t.Start(0, 0, d[0])
 }
 
 // StartWeek 偏移至 ±n 周开始时间，默认返回本周开始时间。
@@ -200,15 +208,24 @@ func (t Time) StartWeek(n ...int) Time {
 func (t Time) End(ymd ...int) Time {
 	y, m, d := t.Year(), 12, 31
 
-	if i := len(ymd); i == 1 {
-		y += ymd[0]
-	} else if i == 2 {
-		y, m = y+ymd[0], ymd[1]
-	} else if i > 2 {
-		y, m, d = y+ymd[0], ymd[1], ymd[2]
+	if i := len(ymd); i > 0 {
+		if y = ymd[0]; i > 1 {
+			m = ymd[1]
+		}
+		if i > 2 && ymd[2] != 0 {
+			u := t.time.AddDate(y, m, ymd[2])
+			return Date(u.Year(), u.Month(), u.Day(), 23, 59, 59, 999999999, t.Location())
+		}
 	}
 
-	if maxDay := DaysIn(y, m); d > maxDay {
+	months := t.Month() + m            // 计算总月数
+	y += t.Year() + (months-1)/12      // 计算新的年份
+	if m = (months-1)%12 + 1; m <= 0 { // 计算剩余月数并处理负数情况
+		m += 12 // 将月份调整到正确范围 (1-12)
+		y--     // 由于月份向前偏移了一年，所以年份需要减 1。
+	}
+
+	if maxDay := DaysIn(y, m); d > maxDay { // 处理溢出天数
 		d = maxDay
 	}
 
@@ -217,20 +234,18 @@ func (t Time) End(ymd ...int) Time {
 
 // EndMonth 时间 t 的 m 月 d 日的结束时间
 func (t Time) EndMonth(md ...int) Time {
-	m, d := t.Month(), DaysIn(t.Year(), t.Month())
-
-	if i := len(md); i == 1 {
-		m = md[0]
-	} else if i > 1 {
-		m, d = md[0], md[1]
+	m, d := 0, 0
+	if i := len(md); i > 0 {
+		if m = md[0]; i > 1 {
+			d = md[1]
+		}
 	}
-
 	return t.End(0, m, d)
 }
 
 // EndDay 时间 t 的 d 日的结束时间
-func (t Time) EndDay(d int) Time {
-	return t.End(0, t.Month(), d)
+func (t Time) EndDay(d ...int) Time {
+	return t.End(0, 0, append(d, 0)[0])
 }
 
 // EndWeek 偏移至 ±n 周结束时间，默认返回本周结束时间。
@@ -255,6 +270,11 @@ func (t Time) Year() int {
 	return t.time.Year()
 }
 
+// YearDay 返回年份中的日期，非闰年的范围为 [1,365]，闰年的范围为 [1,366]。
+func (t Time) YearDay() int {
+	return t.time.YearDay()
+}
+
 // Month 返回 t 的月份
 func (t Time) Month() int {
 	return int(t.time.Month())
@@ -268,11 +288,6 @@ func (t Time) Day() int {
 // Days 返回本月份的最大天数
 func (t Time) Days() int {
 	return DaysIn(t.Year(), t.Month())
-}
-
-// YearDay 返回年份，非闰年范围 [1,365]，闰年范围 [1,366]。
-func (t Time) YearDay() int {
-	return t.time.YearDay()
 }
 
 // Weekday 返回星期
@@ -320,7 +335,32 @@ func (t Time) Unix(n ...int) int64 {
 	return t.time.UnixNano() / divisor
 }
 
-// ---- 时间差 ----
+// UTC 返回 UTC 时间
+func (t Time) UTC() Time {
+	return Time{time: t.time.UTC()}
+}
+
+// Local 返回本地时间
+func (t Time) Local() Time {
+	return Time{time: t.time.Local()}
+}
+
+// In 返回指定的 loc 时间
+func (t Time) In(loc *time.Location) Time {
+	return Time{time: t.time.In(loc)}
+}
+
+// Location 返回时区信息
+func (t Time) Location() *time.Location {
+	return t.time.Location()
+}
+
+// Time 返回 time.Time
+func (t Time) Time() time.Time {
+	return t.time
+}
+
+// ---- 比较时间 ----
 
 // DiffIn 返回 t 和 u 的时间差。
 //
@@ -353,16 +393,6 @@ func (t Time) DiffAbsIn(u Time, unit string) int {
 	return int(math.Abs(float64(t.DiffIn(u, unit))))
 }
 
-// Since 返回自 t 以来经过的时间。它是 Now().Sub(t) 的简写。
-func Since(t Time) time.Duration {
-	return time.Since(t.time)
-}
-
-// Until 返回直到 t 的持续时间。它是 t.Sub(Now()) 的简写。
-func Until(t Time) time.Duration {
-	return time.Until(t.time)
-}
-
 // Sub 返回 t - u 的时间差
 func (t Time) Sub(u Time) time.Duration {
 	return t.time.Sub(u.time)
@@ -389,31 +419,14 @@ func (t Time) Compare(u Time) int {
 	return t.time.Compare(u.time)
 }
 
-// ----
-
-// UTC 返回 UTC 时间
-func (t Time) UTC() Time {
-	return Time{time: t.time.UTC()}
+// Since 返回自 t 以来经过的时间。它是 Now().Sub(t) 的简写。
+func Since(t Time) time.Duration {
+	return time.Since(t.time)
 }
 
-// Local 返回本地时区的时间
-func (t Time) Local() Time {
-	return Time{time: t.time.Local()}
-}
-
-// In 返回指定的 loc 时间
-func (t Time) In(loc *time.Location) Time {
-	return Time{time: t.time.In(loc)}
-}
-
-// Location 返回时区信息
-func (t Time) Location() *time.Location {
-	return t.time.Location()
-}
-
-// Time 返回 time.Time
-func (t Time) Time() time.Time {
-	return t.time
+// Until 返回直到 t 的持续时间。它是 t.Sub(Now()) 的简写。
+func Until(t Time) time.Duration {
+	return time.Until(t.time)
 }
 
 // ---- 序列化时间 ----
@@ -452,7 +465,7 @@ func (t Time) IsZero() bool {
 	return t.time.IsZero()
 }
 
-func (t Time) ZeroOR(u Time) Time {
+func (t Time) ZeroOr(u Time) Time {
 	if t.IsZero() {
 		return u
 	}

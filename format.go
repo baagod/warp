@@ -104,7 +104,7 @@ func ParseByLayout(layout string, value string, loc ...*time.Location) Time {
 }
 
 func (t Time) String() string {
-	return t.time.Format(time.DateTime)
+	return t.time.Format(DateTime)
 }
 
 func (t Time) Format(layout string) string {
