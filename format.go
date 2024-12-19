@@ -50,7 +50,7 @@ var patterns = map[string]*regexp.Regexp{
 	"02 Jan 06 15:04 MST":                 re(`\d{2} (?i)[a-z]{3} \d{2} \d{2}:\d{2} %s`, mst),
 	"02 Jan 06 15:04 -0700":               re(`\d{2} (?i)[a-z]{3} \d{2} \d{2}:\d{2} %s`, z0700),
 	"Mon Jan _2 15:04:05 2006":            re(`(?i)([a-z]{3} ){2}\d{1,2} %s \d{4}`, datetime),
-	"01/02 03:04:05PM '06 -0700":          re(`\d{2}/\d{2} %s[AP]M '\d{2} %s`, datetime, z0700),
+	"01-02 03:04:05PM '06 -0700":          re(`\d{2}-\d{2} %s[AP]M '\d{2} %s`, datetime, z0700),
 	"Mon Jan _2 15:04:05 MST 2006":        re(`(?i)([a-z]{3} ){2}\d{1,2} %s %s \d{4}`, datetime, mst),
 	"Mon, 02 Jan 2006 15:04:05 MST":       re(`(?i)[a-z]{3}, \d{2} (?i)[a-z]{3} \d{4} %s %s`, datetime, mst),
 	"Mon Jan 02 15:04:05 -0700 2006":      re(`(?i)([a-z]{3} ){2}\d{2} %s %s \d{4}`, z0700, datetime),
@@ -67,6 +67,8 @@ func ParseE(value string, loc ...*time.Location) (Time, error) {
 	}
 
 	var layout string
+	value = strings.ReplaceAll(value, "/", "-")
+
 	for k, v := range patterns {
 		if v.MatchString(value) {
 			layout = k
@@ -79,12 +81,25 @@ func ParseE(value string, loc ...*time.Location) (Time, error) {
 	}
 
 	pt, err := time.ParseInLocation(layout, value, loc[0])
-	return Time{pt}, err
+	return Time{time: pt}, err
 }
 
 // Parse 返回忽略错误的 ParseE()
 func Parse(value string, loc ...*time.Location) Time {
 	t, _ := ParseE(value, loc...)
+	return t
+}
+
+func ParseByLayoutE(layout string, value string, loc ...*time.Location) (Time, error) {
+	if loc == nil {
+		loc = append(loc, time.Local)
+	}
+	pt, err := time.ParseInLocation(layout, value, loc[0])
+	return Time{time: pt}, err
+}
+
+func ParseByLayout(layout string, value string, loc ...*time.Location) Time {
+	t, _ := ParseByLayoutE(layout, value, loc...)
 	return t
 }
 

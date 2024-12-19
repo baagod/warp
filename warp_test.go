@@ -3,15 +3,12 @@ package warp
 import (
 	"fmt"
 	"testing"
-	"time"
 )
 
 func TestWarp(t *testing.T) {
-	pt := Parse("2024-01-31")
-	pt = pt.AddYear(0, 1) // 2023-01-31
-
-	// input: 2024-05-01
-	fmt.Println("time:", pt.Format(time.DateTime))
+	pt, err := ParseE("01-02 03:04:05PM '06 -0700")
+	fmt.Println("err:", err)
+	fmt.Println("time:", pt)
 }
 
 func BenchmarkParse(b *testing.B) {

@@ -34,7 +34,9 @@ func Date[Month ~int](
 	return Time{time: time.Date(year, m, day, hour, min, sec, nsec, loc[0])}
 }
 
-// AddYear 添加年月日。如果不指定参数 d 则年、月不会溢出。默认添加一年。
+// ---- 添加时间 ----
+
+// AddYear 添加年月日，指定 d 参数时年、月会溢出。默认添加一年。
 func (t Time) AddYear(ymd ...int) Time {
 	year, month := 1, 0
 
@@ -42,7 +44,7 @@ func (t Time) AddYear(ymd ...int) Time {
 		year = ymd[0]
 	} else if i == 2 {
 		year, month = ymd[0], ymd[1]
-	} else if i >= 3 {
+	} else if i > 2 {
 		return Time{time: t.time.AddDate(ymd[0], ymd[1], ymd[2])}
 	}
 
@@ -60,7 +62,7 @@ func (t Time) AddYear(ymd ...int) Time {
 
 	return Date(
 		year, month, day,
-		t.Hour(), t.Minute(), t.Second(), t.Nano(),
+		t.Hour(), t.Minute(), t.Second(), t.Second(9),
 		t.Location(),
 	)
 }
@@ -72,7 +74,7 @@ func (t Time) AddMonth(md ...int) Time {
 	switch i := len(md); {
 	case i == 1:
 		m = md[0]
-	case i >= 2:
+	case i > 1:
 		m, d = md[0], md[1]
 	}
 
@@ -87,134 +89,166 @@ func (t Time) AddDay(d ...int) Time {
 	return Time{time: t.time.AddDate(0, 0, d[0])}
 }
 
-// Add 返回 t + d 的时间
+// Add 返回 t + d 时间
 func (t Time) Add(d time.Duration) Time {
 	return Time{time: t.time.Add(d)}
 }
 
-// Go 在当前年的基础上偏移 y 年，和明确指定到 m 月 d 日。
-// 如果 m, d 为负数，则从最后的月、日开始偏移。
+// ---- 选择时间 ----
+
+// Go 偏移 ±y 年并选择 m 月 d 日，如果 m, d 为负数，则从最后的月、日开始偏移。
 func (t Time) Go(y int, md ...int) Time {
-	md = append(md, []int{0, 0}...)
-	m, d := md[0], md[1]
+	year, month, day := t.Year()+y, t.Month(), t.Day()
 
-	if m != 0 {
-		mm := int(math.Min(12, math.Abs(float64(m))))
-		if month := t.Month(); m > 0 {
-			m = -month + mm
-		} else {
-			m = -month + 13 - mm
+	if i := len(md); i > 0 {
+		if m := float64(md[0]); m > 0 {
+			month = int(math.Min(m, 12))
+		} else if m < 0 {
+			month = int(math.Max(13+m, 1))
+		}
+		if i > 1 {
+			day = md[1]
 		}
 	}
 
-	if d != 0 {
-		days := DaysIn(y+t.Year(), t.Month()+m)
-		dd := int(math.Min(float64(days), math.Abs(float64(d))))
-		if d > 0 {
-			d = -t.Day() + dd
-		} else {
-			d = -t.Day() + (days + 1) - dd
-		}
+	maxDay := float64(DaysIn(year, month))
+	if d := float64(day); d > 0 {
+		day = int(math.Min(d, maxDay))
+	} else {
+		day = int(math.Max(maxDay+d+1, 1))
 	}
 
-	return t.AddYear(y, m, d)
+	return Date(
+		year, month, day,
+		t.Hour(), t.Minute(), t.Second(), t.Second(9),
+		t.Location(),
+	)
 }
 
-// GoYear 跟 Go() 一样，但是 y 指定去确切的年份而非偏移。
+// GoYear 和 Go() 一样，但 y 指定为确切年份而非偏移。
 func (t Time) GoYear(y int, md ...int) Time {
 	return t.Go(y-t.Year(), md...)
 }
 
 func (t Time) GoMonth(m int, d ...int) Time {
-	return t.Go(0, m, append(d, 0)[0])
+	var day int
+	if d != nil {
+		day = d[0]
+	}
+	return t.Go(0, m, day)
 }
 
 func (t Time) GoDay(d int) Time {
 	return t.Go(0, 0, d)
 }
 
-// StartYear +y 年后第 m 月 d 日的开始时间
-func (t Time) StartYear(ymd ...int) Time {
+// ---- 开始时间 ----
+
+// Start 返回时间 t.Year()+y 年的 m 月 d 日开始时间
+func (t Time) Start(ymd ...int) Time {
 	y, m, d := t.Year(), 1, 1
-	if ymd != nil {
+
+	if i := len(ymd); i == 1 {
 		y += ymd[0]
+	} else if i == 2 {
+		y, m = y+ymd[0], ymd[1]
+	} else if i > 2 {
+		y, m, d = y+ymd[0], ymd[1], ymd[2]
 	}
 
-	if len(ymd) > 1 && ymd[1] > 0 {
-		m = ymd[1]
+	if maxDay := DaysIn(y, m); d > maxDay {
+		d = maxDay
 	}
 
-	if len(ymd) > 2 && ymd[2] > 0 {
-		d = ymd[2]
-	}
-
-	_t := time.Date(y, time.Month(m), d, 0, 0, 0, 0, t.Location())
-	return Time{time: _t}
+	return Date(y, m, d, 0, 0, 0, 0, t.Location())
 }
 
-// StartMonth +m 月后第 d 日的开始时间
+// StartMonth 返回时间 t 的 m 月 d 日的开始时间
 func (t Time) StartMonth(md ...int) Time {
-	md = append(md, 0, 0)
-	return t.StartYear(0, t.Month()+md[0], md[1])
+	m, d := t.Month(), 1
+	if i := len(md); i == 1 {
+		m = md[0]
+	} else if i > 1 {
+		m, d = md[0], md[1]
+	}
+	return t.Start(0, m, d)
 }
 
-// StartDay +d 日的开始时间
-func (t Time) StartDay(d ...int) Time {
-	dd := t.Day() + append(d, 0)[0]
-	return t.StartYear(0, t.Month(), dd)
+// StartDay 返回时间 t 的 d 日开始时间
+func (t Time) StartDay(d int) Time {
+	return t.Start(0, t.Month(), d)
 }
 
-// StartWeek 本周开始时间
-func (t Time) StartWeek(w ...int) Time {
-	n := t.Weekday()
-	if n == 0 {
-		n = 7
+// StartWeek 偏移至 ±n 周开始时间，默认返回本周开始时间。
+func (t Time) StartWeek(n ...int) Time {
+	weekday := t.Weekday()
+	if weekday == time.Sunday {
+		weekday = 7
 	}
 
-	day := t.Day() - n + 1
-	day += append(w, 0)[0] * 7
+	day := t.Day() - int(weekday) + 1
+	if n != nil {
+		day += n[0] * 7
+	}
 
 	return Date(t.Year(), t.Month(), day, 0, 0, 0, 0, t.Location())
 }
 
-func (t Time) EndDay() Time {
-	return Date(t.Year(), t.Month(), t.Day()+1, 0, 0, 0, -1, t.Location())
+// ---- 结束时间 ----
+
+// End 时间 t.Year()+y 年的 m 月 d 日结束时间
+func (t Time) End(ymd ...int) Time {
+	y, m, d := t.Year(), 12, 31
+
+	if i := len(ymd); i == 1 {
+		y += ymd[0]
+	} else if i == 2 {
+		y, m = y+ymd[0], ymd[1]
+	} else if i > 2 {
+		y, m, d = y+ymd[0], ymd[1], ymd[2]
+	}
+
+	if maxDay := DaysIn(y, m); d > maxDay {
+		d = maxDay
+	}
+
+	return Date(y, m, d, 23, 59, 59, 999999999, t.Location())
 }
 
-// InYears 返回 t 与 u 的年差
-func (t Time) InYears(u Time) int {
-	return int(t.Sub(u).Abs().Hours() / 8760)
+// EndMonth 时间 t 的 m 月 d 日的结束时间
+func (t Time) EndMonth(md ...int) Time {
+	m, d := t.Month(), DaysIn(t.Year(), t.Month())
+
+	if i := len(md); i == 1 {
+		m = md[0]
+	} else if i > 1 {
+		m, d = md[0], md[1]
+	}
+
+	return t.End(0, m, d)
 }
 
-// InDays 返回 t 与 u 的天差
-func (t Time) InDays(u Time) int {
-	return int(t.Sub(u).Abs().Hours() / 24)
+// EndDay 时间 t 的 d 日的结束时间
+func (t Time) EndDay(d int) Time {
+	return t.End(0, t.Month(), d)
 }
 
-// InHours 返回 t 与 u 的时差
-func (t Time) InHours(u Time) int {
-	return int(t.Sub(u).Abs().Hours())
+// EndWeek 偏移至 ±n 周结束时间，默认返回本周结束时间。
+func (t Time) EndWeek(n ...int) Time {
+	weekday := t.Weekday()
+	if weekday == time.Sunday {
+		weekday = 7
+	}
+
+	day := t.Day() + (7 - int(weekday))
+	if n != nil {
+		day += n[0] * 7
+	}
+
+	return Date(t.Year(), t.Month(), day, 23, 59, 59, 999999999, t.Location())
 }
 
-// InMinutes 返回 t 与 u 的分差
-func (t Time) InMinutes(u Time) int {
-	return int(t.Sub(u).Abs().Minutes())
-}
-
-// InSeconds 返回 t 与 u 的秒差
-func (t Time) InSeconds(u Time) int {
-	return int(t.Sub(u).Abs().Seconds())
-}
-
-// InMillis 返回 t 与 u 毫秒差
-func (t Time) InMillis(u Time) int {
-	return int(t.Sub(u).Abs().Milliseconds())
-}
-
-// Sub 返回 t - u 的时间差
-func (t Time) Sub(u Time) time.Duration {
-	return t.time.Sub(u.time)
-}
+// ---- 获取时间 ----
 
 // Year 返回 t 的年份
 func (t Time) Year() int {
@@ -233,70 +267,105 @@ func (t Time) Day() int {
 
 // Days 返回本月份的最大天数
 func (t Time) Days() int {
-	// 公历一年中 4、6、9、11 是小月，都有 30 天；
-	// 1、3、5、7、8、10、12 是大月，有 31 天；
-	// 2 月份平年有 28 天，闰年有 29 天。
 	return DaysIn(t.Year(), t.Month())
 }
 
-// YearDay 返回 t 年份中的第几天，非闰年为 1-365，闰年为 1-366。
+// YearDay 返回年份，非闰年范围 [1,365]，闰年范围 [1,366]。
 func (t Time) YearDay() int {
 	return t.time.YearDay()
 }
 
-// Weekday 返回 t 的星期
-func (t Time) Weekday() int {
-	return int(t.time.Weekday())
+// Weekday 返回星期
+func (t Time) Weekday() time.Weekday {
+	return t.time.Weekday()
 }
 
-// Hour 返回 t 的小时
+// Hour 返回小时，范围 [0, 23]
 func (t Time) Hour() int {
 	return t.time.Hour()
 }
 
-// Minute 返回 t 的分钟
+// Minute 返回分钟，范围 [0, 59]
 func (t Time) Minute() int {
 	return t.time.Minute()
 }
 
-// Second 返回 t 的秒数
-func (t Time) Second() int {
-	return t.time.Second()
+// Second 返回时间的秒数或指定纳秒精度的小数部分
+//
+// 参数 n (可选) 指定返回的精度：
+//   - 不提供或 0: 返回整秒数 (0-59)
+//   - 1-9: 返回纳秒精度的小数部分，n 表示小数位数
+func (t Time) Second(n ...int) int {
+	if n == nil || n[0] == 0 {
+		return t.time.Second()
+	}
+	divisor := int(math.Pow10(9 - Clamp(n[0], 1, 9)))
+	return t.time.Nanosecond() / divisor
 }
 
-// Milli 返回 t 的毫秒
-func (t Time) Milli() int {
-	return t.Nano() / 1e6
+// Unix 返回时间戳，可选择指定精度。
+//
+// 参数 n (可选) 指定返回的时间戳精度：
+//   - 不提供或 0: 秒级 (10位)
+//   - 3: 毫秒级 (13位)
+//   - 6: 微秒级 (16位)
+//   - 9: 纳秒级 (19位)
+//   - 其他值: 对应位数的时间戳
+func (t Time) Unix(n ...int) int64 {
+	if n == nil || n[0] == 0 {
+		return t.time.Unix()
+	}
+	precision := Clamp(n[0]+10, 1, 19)
+	divisor := int64(math.Pow10(19 - precision))
+	return t.time.UnixNano() / divisor
 }
 
-// Micro 返回 t 的微秒
-func (t Time) Micro() int {
-	return t.Nano() / 1e3
+// ---- 时间差 ----
+
+// DiffIn 返回 t 和 u 的时间差。
+//
+// 参数 unit 指定返回差异的单位：
+//   - "y": 年
+//   - "M": 月
+//   - "d": 日
+//   - "h": 小时
+//   - "m": 分钟
+//   - "s": 秒
+func (t Time) DiffIn(u Time, unit string) int {
+	switch unit {
+	case "y":
+		return t.Year() - u.Year()
+	case "M":
+		return (t.Year()-u.Year())*12 + t.Month() - u.Month()
+	case "d":
+		return int(t.Sub(u).Hours() / 24)
+	case "h":
+		return int(t.Sub(u).Hours())
+	case "m":
+		return int(t.Sub(u).Minutes())
+	case "s":
+		return int(t.Sub(u).Seconds())
+	}
+	return 0
 }
 
-// Nano 返回 t 的纳秒
-func (t Time) Nano() int {
-	return t.time.Nanosecond()
+func (t Time) DiffAbsIn(u Time, unit string) int {
+	return int(math.Abs(float64(t.DiffIn(u, unit))))
 }
 
-// Unix 返回 t 的秒时间戳
-func (t Time) Unix() int64 {
-	return t.time.Unix()
+// Since 返回自 t 以来经过的时间。它是 Now().Sub(t) 的简写。
+func Since(t Time) time.Duration {
+	return time.Since(t.time)
 }
 
-// UnixMilli 返回 t 毫秒时间戳
-func (t Time) UnixMilli() int64 {
-	return t.time.UnixMilli()
+// Until 返回直到 t 的持续时间。它是 t.Sub(Now()) 的简写。
+func Until(t Time) time.Duration {
+	return time.Until(t.time)
 }
 
-// UnixMicro 返回 t 的微秒时间戳
-func (t Time) UnixMicro() int64 {
-	return t.time.UnixMicro()
-}
-
-// UnixNano 返回 t 的纳秒时间戳
-func (t Time) UnixNano() int64 {
-	return t.time.UnixNano()
+// Sub 返回 t - u 的时间差
+func (t Time) Sub(u Time) time.Duration {
+	return t.time.Sub(u.time)
 }
 
 // Before 返回 t 是否在 u 之前 (t < u)
@@ -315,42 +384,39 @@ func (t Time) Equal(u Time) bool {
 }
 
 // Compare 比较 t 和 u。
-// 如果 t 小于 u 则返回 -1；大于返回 1；等于返回 0。
+// 如果 t 小于 u，返回 -1；大于返回 1；等于返回 0。
 func (t Time) Compare(u Time) int {
 	return t.time.Compare(u.time)
 }
 
-// IsZero 返回 t 是否零时刻
-func (t Time) IsZero() bool {
-	return t.time.IsZero()
-}
+// ----
 
-// UTC 返回 UTC 时区的 t
+// UTC 返回 UTC 时间
 func (t Time) UTC() Time {
 	return Time{time: t.time.UTC()}
 }
 
-// Local 返回本地时区的 t
+// Local 返回本地时区的时间
 func (t Time) Local() Time {
 	return Time{time: t.time.Local()}
 }
 
-// In 返回 loc 时区的 t
+// In 返回指定的 loc 时间
 func (t Time) In(loc *time.Location) Time {
 	return Time{time: t.time.In(loc)}
 }
 
-// Location 返回 t 关联的时区信息
+// Location 返回时区信息
 func (t Time) Location() *time.Location {
 	return t.time.Location()
 }
 
-// Time 返回 t 的 time.Time
+// Time 返回 time.Time
 func (t Time) Time() time.Time {
 	return t.time
 }
 
-// ----
+// ---- 序列化时间 ----
 
 // Scan 由 DB 转到 Go 时调用
 func (t *Time) Scan(value any) error {
@@ -379,32 +445,26 @@ func (t *Time) UnmarshalJSON(b []byte) (err error) {
 	return
 }
 
-// ----
+// ---- 其他 ----
 
-func Unix(sec int64) Time {
-	return Time{time: time.Unix(sec, 0)}
+// IsZero 返回 t 是否零时，即 0001-01-01 00:00:00 UTC。
+func (t Time) IsZero() bool {
+	return t.time.IsZero()
 }
 
-func UnixMilli(msec int64) Time {
-	return Time{time: time.UnixMilli(msec)}
+func (t Time) ZeroOR(u Time) Time {
+	if t.IsZero() {
+		return u
+	}
+	return t
 }
 
-func UnixMicro(usec int64) Time {
-	return Time{time: time.UnixMicro(usec)}
-}
-
-func UnixNano(nsec int64) Time {
-	return Time{time: time.Unix(0, nsec)}
-}
-
-// Since 返回自 t 以来经过时间。它是 Now().Sub(t) 的简写。
-func Since(t Time) time.Duration {
-	return time.Since(t.time)
-}
-
-// Until 返回直到 t 的持续时间。它是 t.Sub(Now()) 的简写。
-func Until(t Time) time.Duration {
-	return time.Until(t.time)
+// Unix 返回给定 Unix 时间戳的本地时间
+func Unix(secs int64) Time {
+	if secs <= 9999999999 { // 10 位及以下，视为秒级时间戳
+		return Time{time: time.Unix(secs, 0)}
+	}
+	return Time{time: time.Unix(0, secs)}
 }
 
 // IsLeap 返回 year 是否闰年
@@ -413,17 +473,13 @@ func IsLeap(year int) bool {
 }
 
 // DaysIn 返回 y 年 m 月的最大天数
+//
+// 1, 3, 5, 7, 8, 10, 12 月有 31 天；4, 6, 9, 11 月有 30 天；
+// 平年 2 月有 28 天，闰年 29 天。
 func DaysIn(y, m int) int {
 	m = int(math.Abs(float64(m)))
 	if m == 2 && IsLeap(y) {
 		return 29
 	}
 	return maxDays[m]
-}
-
-func (t Time) Or(e Time) Time {
-	if t.IsZero() {
-		return e
-	}
-	return t
 }
