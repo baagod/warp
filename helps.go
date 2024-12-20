@@ -1,4 +1,4 @@
-package warp
+package thru
 
 func Clamp[T int | int64 | float64](value, min, max T) int {
 	if value < min {

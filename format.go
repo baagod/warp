@@ -1,4 +1,4 @@
-package warp
+package thru
 
 import (
 	"fmt"
@@ -62,7 +62,7 @@ var patterns = map[string]*regexp.Regexp{
 // ParseE 解析 value 并返回它所表示的时间
 func ParseE(value string, loc ...*time.Location) (Time, error) {
 	value = strings.Trim(strings.TrimSpace(value), `"`)
-	if value == "" {
+	if value == "" || value == "null" {
 		return Time{}, nil
 	}
 

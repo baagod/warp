@@ -1,4 +1,4 @@
-package warp
+package thru
 
 import (
 	"database/sql/driver"
@@ -12,8 +12,11 @@ var (
 )
 
 type Time struct {
-	time time.Time
+	time   time.Time
+	layout string
 }
+
+// ---- 创建时间 ----
 
 func New(t time.Time) Time {
 	return Time{time: t}
@@ -32,6 +35,19 @@ func Date[Month ~int](
 	}
 	m := time.Month(month)
 	return Time{time: time.Date(year, m, day, hour, min, sec, nsec, loc[0])}
+}
+
+// Unix 返回给定时间戳的本地时间。secs 可以是秒、毫秒或纳秒级时间戳。
+func Unix(secs int64) Time {
+	if secs <= 9999999999 { // 10 位及以下，视为秒级时间戳
+		return Time{time: time.Unix(secs, 0)}
+	}
+	return Time{time: time.Unix(0, secs)}
+}
+
+func (t Time) Layout(layout string) Time {
+	t.layout = layout
+	return t
 }
 
 // ---- 添加时间 ----
@@ -434,7 +450,7 @@ func Until(t Time) time.Duration {
 // Scan 由 DB 转到 Go 时调用
 func (t *Time) Scan(value any) error {
 	if v, ok := value.(time.Time); ok {
-		*t = Time{v}
+		*t = Time{time: v}
 	}
 	return nil
 }
@@ -444,12 +460,12 @@ func (t Time) Value() (driver.Value, error) {
 	if t.IsZero() {
 		return nil, nil
 	}
-	return t.String(), nil
+	return t, nil
 }
 
 // MarshalJSON 将 t 转为 JSON 字符串时调用
 func (t Time) MarshalJSON() ([]byte, error) {
-	return []byte(`"` + t.String() + `"`), nil
+	return []byte(`"` + t.Format(DateTime) + `"`), nil
 }
 
 // UnmarshalJSON 将 JSON 字符串转为 t 时调用
@@ -470,14 +486,6 @@ func (t Time) ZeroOr(u Time) Time {
 		return u
 	}
 	return t
-}
-
-// Unix 返回给定 Unix 时间戳的本地时间
-func Unix(secs int64) Time {
-	if secs <= 9999999999 { // 10 位及以下，视为秒级时间戳
-		return Time{time: time.Unix(secs, 0)}
-	}
-	return Time{time: time.Unix(0, secs)}
 }
 
 // IsLeap 返回 year 是否闰年
