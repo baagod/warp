@@ -12,8 +12,7 @@ var (
 )
 
 type Time struct {
-	time   time.Time
-	layout string
+	time time.Time
 }
 
 // ---- 创建时间 ----
@@ -27,8 +26,8 @@ func Now() Time {
 }
 
 func Date[Month ~int](
-	year int, month Month, day,
-	hour, min, sec, nsec int, loc ...*time.Location,
+	year int, month Month, day, hour,
+	min, sec, nsec int, loc ...*time.Location,
 ) Time {
 	if loc == nil {
 		loc = append(loc, time.Local)
@@ -43,11 +42,6 @@ func Unix(secs int64) Time {
 		return Time{time: time.Unix(secs, 0)}
 	}
 	return Time{time: time.Unix(0, secs)}
-}
-
-func (t Time) Layout(layout string) Time {
-	t.layout = layout
-	return t
 }
 
 // ---- 添加时间 ----
@@ -98,8 +92,11 @@ func (t Time) AddMonth(md ...int) Time {
 
 // AddDay 添加天数，默认添加一天。
 func (t Time) AddDay(d ...int) Time {
-	d = append(d, 1)
-	return t.AddYear(0, 0, d[0])
+	day := 1
+	if d != nil {
+		day = d[0]
+	}
+	return t.AddYear(0, 0, day)
 }
 
 // Add 返回 t + d 时间
@@ -159,34 +156,20 @@ func (t Time) GoDay(d int) Time {
 
 // Start 它和 `AddYear(ymd ...int)` 类似，但是返回开始时间。
 func (t Time) Start(ymd ...int) Time {
-	y, m := 1, 0
+	y, m, d := t.Year(), 1, 1
 
-	if i := len(ymd); i > 0 {
-		if y = ymd[0]; i > 1 {
-			m = ymd[1]
-		}
-		if i > 2 && ymd[0] != 0 {
-			u := t.time.AddDate(y, m, ymd[2])
-			return Date(u.Year(), u.Month(), u.Day(), 0, 0, 0, 0, t.Location())
-		}
-	}
-
-	months := t.Month() + m            // 计算总月数
-	y += t.Year() + (months-1)/12      // 计算新的年份
-	if m = (months-1)%12 + 1; m <= 0 { // 计算剩余月数并处理负数情况
-		m += 12 // 将月份调整到正确范围 (1-12)
-		y--     // 由于月份向前偏移了一年，所以年份需要减 1。
-	}
-
-	d := t.Day()                            // 获取原始日期
-	if maxDay := DaysIn(y, m); d > maxDay { // 处理溢出天数
-		d = maxDay
+	if i := len(ymd); i == 1 { // 传年
+		y += ymd[0]
+	} else if i == 2 { // 传年月
+		y, m = y+ymd[0], t.Month()+ymd[1]
+	} else if i > 2 { // 传年月日
+		y, m, d = y+ymd[0], t.Month()+ymd[1], t.Day()+ymd[2]
 	}
 
 	return Date(y, m, d, 0, 0, 0, 0, t.Location())
 }
 
-// StartMonth 返回时间 t 的 m 月 d 日的开始时间
+// StartMonth 返回 m 月 d 日的开始时间
 func (t Time) StartMonth(md ...int) Time {
 	m, d := 0, 0
 	if i := len(md); i > 0 {
@@ -197,10 +180,13 @@ func (t Time) StartMonth(md ...int) Time {
 	return t.Start(0, m, d)
 }
 
-// StartDay 返回时间 t 的 d 日开始时间
+// StartDay 返回 t 月 d 日开始时间
 func (t Time) StartDay(d ...int) Time {
-	d = append(d, 0)
-	return t.Start(0, 0, d[0])
+	var day int
+	if d != nil {
+		day = d[0]
+	}
+	return t.Start(0, 0, day)
 }
 
 // StartWeek 偏移至 ±n 周开始时间，默认返回本周开始时间。
@@ -220,29 +206,16 @@ func (t Time) StartWeek(n ...int) Time {
 
 // ---- 结束时间 ----
 
-// End 时间 t.Year()+y 年的 m 月 d 日结束时间
+// End 它和 `AddYear(ymd ...int)` 类似，但是返回结束时间。
 func (t Time) End(ymd ...int) Time {
-	y, m, d := t.Year(), 12, 31
+	y, m, d := t.Year(), t.Month(), t.Day()
 
-	if i := len(ymd); i > 0 {
-		if y = ymd[0]; i > 1 {
-			m = ymd[1]
-		}
-		if i > 2 && ymd[2] != 0 {
-			u := t.time.AddDate(y, m, ymd[2])
-			return Date(u.Year(), u.Month(), u.Day(), 23, 59, 59, 999999999, t.Location())
-		}
-	}
-
-	months := t.Month() + m            // 计算总月数
-	y += t.Year() + (months-1)/12      // 计算新的年份
-	if m = (months-1)%12 + 1; m <= 0 { // 计算剩余月数并处理负数情况
-		m += 12 // 将月份调整到正确范围 (1-12)
-		y--     // 由于月份向前偏移了一年，所以年份需要减 1。
-	}
-
-	if maxDay := DaysIn(y, m); d > maxDay { // 处理溢出天数
-		d = maxDay
+	if i := len(ymd); i == 1 { // 传年
+		y += ymd[0]
+	} else if i == 2 { // 传年月
+		y, m = y+ymd[0], m+ymd[1]
+	} else if i > 2 { // 传年月日
+		y, m, d = y+ymd[0], m+ymd[1], d+ymd[2]
 	}
 
 	return Date(y, m, d, 23, 59, 59, 999999999, t.Location())
@@ -261,7 +234,11 @@ func (t Time) EndMonth(md ...int) Time {
 
 // EndDay 时间 t 的 d 日的结束时间
 func (t Time) EndDay(d ...int) Time {
-	return t.End(0, 0, append(d, 0)[0])
+	var day int
+	if d != nil {
+		day = d[0]
+	}
+	return t.End(0, 0, day)
 }
 
 // EndWeek 偏移至 ±n 周结束时间，默认返回本周结束时间。
